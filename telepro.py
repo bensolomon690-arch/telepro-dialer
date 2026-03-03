@@ -46,7 +46,7 @@ else:
                 new_leads = pd.read_csv(uploaded_file)
             else:
                 new_leads = pd.read_excel(uploaded_file)
-            new_leads = new_leads.rename(columns={
+            new_leads = new_leads.rename(columns=(
     'CLIENT NAME': 'Name',
     'CLIENT CODE': 'ID',
     'Number ': 'Number', 
@@ -104,4 +104,5 @@ else:
         st.subheader(f"Total Calls for {selected_caller}: {len(report_df)}")
 
         st.dataframe(report_df, use_container_width=True)
+
 
