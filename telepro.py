@@ -2,7 +2,9 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import os
-
+if st.sidebar.button('🗑️ Clear All Leads'):
+    st.session_state.clear()
+    st.rerun()
 # --- 1. PERMANENT DATABASE SETUP ---
 DB_FILE = "telecaller_database.csv"
 
@@ -96,4 +98,5 @@ else:
 
         # 3. Show a summary count for the Supervisor
         st.subheader(f"Total Calls for {selected_caller}: {len(report_df)}")
+
         st.dataframe(report_df, use_container_width=True)
