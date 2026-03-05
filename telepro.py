@@ -40,23 +40,20 @@ else:
         st.header("📤 Add New Clients")
         uploaded_file = st.file_uploader("Upload Excel/CSV", type=["csv", "xlsx"])
         
-        if uploaded_file:
-          if uploaded_file.name.endswith('.csv'):
-        new_leads = pd.read_csv(uploaded_file)
-    else:
-        new_leads = pd.read_excel(uploaded_file)
-            else:
-new_leads.columns = new_leads.columns.str.strip()
-new_leads = new_leads.rename(columns=(
-        'CLIENT NAME': 'Name',
-        'CLIENT CODE': 'ID',
-        'Number ': 'Number', 
-        'Mobile': 'Number'
-))
-            # FIX: Cleans the column names (removes hidden spaces)
-            new_leads.columns = new_leads.columns.str.strip()
+if uploaded_file:
+        if uploaded_file.name.endswith('.csv'):
+            new_leads = pd.read_csv(uploaded_file)
+        else:
+            new_leads = pd.read_excel(uploaded_file)
 
-            # FIX: If 'Number' is named 'Mobile' or 'Phone', it renames it automatically
+        new_leads.columns = new_leads.columns.str.strip()
+
+        new_leads = new_leads.rename(columns={
+            'CLIENT NAME': 'Name',
+            'CLIENT CODE': 'ID',
+            'Number ': 'Number', 
+            'Mobile': 'Number'
+        })            # FIX: If 'Number' is named 'Mobile' or 'Phone', it renames it automatically
             if 'Number' not in new_leads.columns:
                 possible = [c for c in new_leads.columns if 'num' in c.lower() or 'mob' in c.lower() or 'phone' in c.lower()]
                 if possible:
@@ -106,6 +103,7 @@ new_leads = new_leads.rename(columns=(
         st.subheader(f"Total Calls for {selected_caller}: {len(report_df)}")
 
         st.dataframe(report_df, use_container_width=True)
+
 
 
 
