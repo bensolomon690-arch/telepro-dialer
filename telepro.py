@@ -8,7 +8,6 @@ st.title("📞 Telecaller Pro - Elite Edition")
 page = st.sidebar.radio("Navigate", ["Upload Leads", "Call Center", "Reports"])
 if page == "Upload Leads":
     st.header("📤 Add New Clients")
-    # This line MUST come before 'if uploaded_file'
     uploaded_file = st.file_uploader("Upload Excel/CSV", type=["csv", "xlsx"])
     if uploaded_file:
         if uploaded_file.name.endswith('.csv'):
@@ -16,7 +15,7 @@ if page == "Upload Leads":
         else:
             new_leads = pd.read_excel(uploaded_file)
         new_leads.columns = new_leads.columns.str.strip()
-        new_leads = new_leads.rename(columns={'CLIENT NAME': 'Name', 'CLIENT CODE': 'ID', 'Number ': 'Number', 'Mobile': 'Number'})
+        new_leads = new_leads.rename(columns={'CLIENT NAME':'Name','CLIENT CODE':'ID','Number ':'Number','Mobile':'Number'})
         if st.button("✅ Import to Dialer"):
             if os.path.exists('telecaller_database.csv'):
                 existing_df = pd.read_csv('telecaller_database.csv')
@@ -29,7 +28,10 @@ elif page == "Call Center":
     st.header("🎯 Calling Station")
     if os.path.exists('telecaller_database.csv'):
         df = pd.read_csv('telecaller_database.csv')
-        st.dataframe(df)
+        edited_df = st.data_editor(df, num_rows="dynamic")
+        if st.button("💾 Save All Changes"):
+            edited_df.to_csv('telecaller_database.csv', index=False)
+            st.success("Changes saved!")
     else:
         st.info("No leads found. Please upload a file first.")
 elif page == "Reports":
