@@ -20,10 +20,7 @@ if st.sidebar.button('🗑️ Log Out'):
     st.session_state.clear()
     st.rerun()
 st.title(f"📞 Telecaller Pro - {st.session_state['role']} Mode")
-if st.session_state['role'] == 'Admin':
-    nav_options = ["Upload Leads", "Call Center", "Manager Dashboard"]
-else:
-    nav_options = ["Upload Leads", "Call Center"]
+nav_options = ["Upload Leads", "Call Center", "Manager Dashboard"] if st.session_state['role'] == 'Admin' else ["Upload Leads", "Call Center"]
 page = st.sidebar.radio("Navigate", nav_options)
 if page == "Upload Leads":
     st.header("📤 Add New Clients")
@@ -35,27 +32,26 @@ if page == "Upload Leads":
             new_leads = pd.read_excel(uploaded_file)
         new_leads.columns = new_leads.columns.str.strip()
         new_leads = new_leads.rename(columns={'CLIENT NAME':'Name','CLIENT CODE':'ID','Number ':'Number','Mobile':'Number'})
-        if 'Status' not in new_leads.columns: new_leads['Status'] = 'Pending'
-        if 'Notes' not in new_leads.columns: new_leads['Notes'] = ''
+        for col in ['Status', 'Notes']:
+            if col not in new_leads.columns: new_leads[col] = 'Pending' if col == 'Status' else ''
         if st.button("✅ Import to Dialer"):
-            if os.path.exists('telecaller_database.csv'):
-                existing_df = pd.read_csv('telecaller_database.csv')
-                updated_df = pd.concat([existing_df, new_leads], ignore_index=True)
-            else:
-                updated_df = new_leads
-            updated_df.to_csv('telecaller_database.csv', index=False)
-            st.success("Success!")
+            db_file = 'telecaller_database.csv'
+            df_to_save = pd.concat([pd.read_csv(db_file), new_leads], ignore_index=True) if os.path.exists(db_file) else new_leads
+            df_to_save.to_csv(db_file, index=False)
+            st.success("Imported Successfully!")
 elif page == "Call Center":
     st.header("🎯 Calling Station")
     if os.path.exists('telecaller_database.csv'):
         df = pd.read_csv('telecaller_database.csv')
         status_filter = st.radio("Select List", ["All", "Pending", "Follow-up", "Completed", "Not Connected"], horizontal=True)
         df_f = df[df['Status'] == status_filter] if status_filter != "All" else df
-        edited_df = st.data_editor(df_f, num_rows="dynamic", key="call_editor")
-        if st.button("💾 Save Progress"):
+        # FIX: Added 'key' and 'on_change' logic support
+        edited_df = st.data_editor(df_f, use_container_width=True, num_rows="dynamic", key="main_editor")
+        if st.button("💾 Save All Progress"):
+            # Update the main database with the edited rows
             df.update(edited_df)
             df.to_csv('telecaller_database.csv', index=False)
-            st.success("Saved!")
+            st.success("Database Updated!")
     else:
         st.info("No leads found.")
 elif page == "Manager Dashboard":
