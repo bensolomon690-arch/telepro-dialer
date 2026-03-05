@@ -39,26 +39,19 @@ else:
     if page == "Upload Leads":
         st.header("📤 Add New Clients")
         uploaded_file = st.file_uploader("Upload Excel/CSV", type=["csv", "xlsx"])
-        
+if uploaded_file:
 if uploaded_file:
         if uploaded_file.name.endswith('.csv'):
             new_leads = pd.read_csv(uploaded_file)
         else:
             new_leads = pd.read_excel(uploaded_file)
-
         new_leads.columns = new_leads.columns.str.strip()
-
         new_leads = new_leads.rename(columns={
             'CLIENT NAME': 'Name',
             'CLIENT CODE': 'ID',
             'Number ': 'Number', 
             'Mobile': 'Number'
-        })            # FIX: If 'Number' is named 'Mobile' or 'Phone', it renames it automatically
-            if 'Number' not in new_leads.columns:
-                possible = [c for c in new_leads.columns if 'num' in c.lower() or 'mob' in c.lower() or 'phone' in c.lower()]
-                if possible:
-                    new_leads = new_leads.rename(columns={possible[0]: 'Number'})
-
+        })
             # Ensure Number column exists before proceeding
             if 'Number' in new_leads.columns:
                 existing_numbers = st.session_state.db['Number'].astype(str).tolist()
@@ -103,6 +96,7 @@ if uploaded_file:
         st.subheader(f"Total Calls for {selected_caller}: {len(report_df)}")
 
         st.dataframe(report_df, use_container_width=True)
+
 
 
 
