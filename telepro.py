@@ -16,6 +16,11 @@ if page == "Upload Leads":
             new_leads = pd.read_excel(uploaded_file)
         new_leads.columns = new_leads.columns.str.strip()
         new_leads = new_leads.rename(columns={'CLIENT NAME':'Name','CLIENT CODE':'ID','Number ':'Number','Mobile':'Number'})
+        # This adds the missing Status and Notes columns automatically
+        if 'Status' not in new_leads.columns:
+            new_leads['Status'] = 'Not Called'
+        if 'Notes' not in new_leads.columns:
+            new_leads['Notes'] = ''
         if st.button("✅ Import to Dialer"):
             if os.path.exists('telecaller_database.csv'):
                 existing_df = pd.read_csv('telecaller_database.csv')
@@ -28,6 +33,7 @@ elif page == "Call Center":
     st.header("🎯 Calling Station")
     if os.path.exists('telecaller_database.csv'):
         df = pd.read_csv('telecaller_database.csv')
+        # This makes the table editable for Status and Notes
         edited_df = st.data_editor(df, num_rows="dynamic")
         if st.button("💾 Save All Changes"):
             edited_df.to_csv('telecaller_database.csv', index=False)
