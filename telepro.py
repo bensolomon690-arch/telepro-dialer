@@ -2,6 +2,22 @@ import streamlit as st
 import pandas as pd
 import os
 
+# 1. Security First: Simple Login
+if 'logged_in' not in st.session_state:
+    st.session_state['logged_in'] = False
+
+if not st.session_state['logged_in']:
+    st.title("🔒 Ben's Private Dialer")
+    password = st.text_input("Enter Access Code", type="password")
+    if st.button("Login"):
+        if password == "1234": # You can change this code later
+            st.session_state['logged_in'] = True
+            st.rerun()
+        else:
+            st.error("Incorrect Code")
+    st.stop()
+
+# 2. The Rest of the App (Only visible after login)
 if st.sidebar.button('🗑️ Clear All Leads'):
     st.session_state.clear()
     st.rerun()
@@ -21,7 +37,6 @@ if page == "Upload Leads":
         new_leads.columns = new_leads.columns.str.strip()
         new_leads = new_leads.rename(columns={'CLIENT NAME':'Name','CLIENT CODE':'ID','Number ':'Number','Mobile':'Number'})
         
-        # This adds the vital status columns back!
         if 'Status' not in new_leads.columns:
             new_leads['Status'] = 'Pending'
         if 'Notes' not in new_leads.columns:
@@ -41,20 +56,19 @@ elif page == "Call Center":
     if os.path.exists('telecaller_database.csv'):
         df = pd.read_csv('telecaller_database.csv')
         
-        # These are your filter buttons from the video!
         status_filter = st.radio("Select List", ["All", "Pending", "Follow-up", "Completed", "Not Connected"], horizontal=True)
         
         if status_filter != "All":
-            df = df[df['Status'] == status_filter]
+            df_filtered = df[df['Status'] == status_filter]
+        else:
+            df_filtered = df
         
-        # Now the table is editable AND filtered
-        edited_df = st.data_editor(df, num_rows="dynamic")
+        edited_df = st.data_editor(df_filtered, num_rows="dynamic", key="data_editor")
         
         if st.button("💾 Save All Changes"):
-            # Update the main database with your edits
-            main_db = pd.read_csv('telecaller_database.csv')
-            main_db.update(edited_df)
-            main_db.to_csv('telecaller_database.csv', index=False)
+            # This updates the main database with your changes
+            df.update(edited_df)
+            df.to_csv('telecaller_database.csv', index=False)
             st.success("Progress saved!")
     else:
         st.info("No leads found. Please upload a file first.")
