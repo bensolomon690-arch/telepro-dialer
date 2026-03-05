@@ -39,8 +39,8 @@ else:
     if page == "Upload Leads":
         st.header("📤 Add New Clients")
         uploaded_file = st.file_uploader("Upload Excel/CSV", type=["csv", "xlsx"])
-if uploaded_file:
-if uploaded_file:
+    if uploaded_file:
+    if uploaded_file:
         if uploaded_file.name.endswith('.csv'):
             new_leads = pd.read_csv(uploaded_file)
         else:
@@ -96,6 +96,7 @@ if uploaded_file:
         st.subheader(f"Total Calls for {selected_caller}: {len(report_df)}")
 
         st.dataframe(report_df, use_container_width=True)
+
 
 
 
