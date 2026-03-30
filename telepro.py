@@ -1,40 +1,18 @@
 import streamlit as st
 import pandas as pd
 import os
-
-# --- 1. SYSTEM CONFIGURATION ---
-st.set_page_config(page_title="Solomon Empire Pro", layout="wide")
+st.set_page_config(page_title="Solomon Pro", layout="wide")
 DB_FILE = 'telecaller_master_db.csv'
-
-# Professional White & Navy Theme for maximum visibility
-st.markdown("""
-    <style>
-    .stApp { background-color: #FFFFFF; color: #1E1E1E; }
-    [data-testid="stSidebar"] { background-color: #F8F9FA !important; border-right: 1px solid #E9ECEF; }
-    h1, h2, h3 { color: #003366 !important; font-weight: 700 !important; }
-    .stButton>button { background-color: #003366; color: white; border-radius: 6px; font-weight: 600; width: 100%; height: 3.5em; }
-    </style>
-    """, unsafe_allow_html=True)
-
-# --- 2. MASTER STATUS LIST (All your custom options) ---
-EMPIRE_STATUSES = [
-    "Pending", "Completed", "Bending", "no incoming call", "out off service", "no idea", 
-    "FOLLOWINGS", "NOT ANSWERING", "CUT THE CALL", "STOCK INVESTMENT / SELLING",
-    "insurance", "fno followings", "rnt followings", "re activation followings",
-    "pre ipo followings", "visiting office", "switch off", "account opening followings",
-    "no response", "mutual fund followings", "not interested", "payin followings"
-]
-
-# --- 3. SECURITY GATEWAY ---
+st.markdown("""<style>.stApp { background-color: #FFFFFF; color: #1E1E1E; } [data-testid="stSidebar"] { background-color: #F8F9FA !important; border-right: 1px solid #E9ECEF; } h1, h2, h3 { color: #003366 !important; font-weight: 700 !important; } .stButton>button { background-color: #003366; color: white; border-radius: 6px; font-weight: 600; width: 100%; height: 3.5em; }</style>""", unsafe_allow_html=True)
+STATUS_LIST = ["Pending", "Completed", "Bending", "no incoming call", "out off service", "no idea", "FOLLOWINGS", "NOT ANSWERING", "CUT THE CALL", "STOCK INVESTMENT / SELLING", "insurance", "fno followings", "rnt followings", "re activation followings", "pre ipo followings", "visiting office", "switch off", "account opening followings", "no response", "mutual fund followings", "not interested", "payin followings"]
 if 'auth' not in st.session_state: st.session_state['auth'] = False
-
-def login():
+if not st.session_state['auth']:
     st.markdown("<h1 style='text-align: center;'>🏛️ Solomon Empire Access</h1>", unsafe_allow_html=True)
     _, col, _ = st.columns([1, 1.2, 1])
     with col:
-        u_id = st.text_input("👤 Management Identity (e.g., ben)")
-        u_pin = st.text_input("🔑 Security PIN", type="password")
-        if st.button("Authorize Entry"):
+        u_id = st.text_input("👤 Identity")
+        u_pin = st.text_input("🔑 PIN", type="password")
+        if st.button("Authorize"):
             if u_pin == "123456" and u_id.lower() == "ben":
                 st.session_state['auth'] = True
                 st.session_state['role'] = "Managing Director"
@@ -45,95 +23,56 @@ def login():
                 st.rerun()
             else: st.error("Access Refused")
     st.stop()
-
-if not st.session_state['auth']: login()
-
-# --- 4. DATA ENGINE (FIXES ATTRIBUTEERROR) ---
 def load_db(): 
     if os.path.exists(DB_FILE):
         df = pd.read_csv(DB_FILE)
-        # Force Status to string to prevent attribute errors in charts/filters
         df['Status'] = df['Status'].fillna('Pending').astype(str)
         return df
     return pd.DataFrame()
-
 def save_db(df): df.to_csv(DB_FILE, index=False)
-
-# --- 5. NAVIGATION ---
-st.sidebar.title("Telecall Pro v10.0")
-if st.sidebar.button("🔐 Logout System"):
+if st.sidebar.button("🔐 Logout"):
     st.session_state.clear()
     st.rerun()
-
-if st.session_state['role'] == "Managing Director":
-    nav = st.sidebar.radio("Command Center", ["📊 Stats", "📥 Sync Leads", "🎯 Call Station"])
-else:
-    nav = st.sidebar.radio("Staff Station", ["📥 Sync Leads", "🎯 Call Station"])
-
-# --- 6. PAGE LOGIC ---
-if nav == "📊 Stats":
-    st.header("📊 Intelligence Dashboard")
+nav = st.sidebar.radio("Menu", ["📊 Dashboard", "📥 Import", "🎯 Dialer"])
+if nav == "📊 Dashboard":
+    st.header("📊 Intelligence")
     df = load_db()
     if not df.empty:
         c1, c2, c3 = st.columns(3)
-        c1.metric("Total Empire Leads", len(df))
-        c2.metric("Completed Calls", len(df[df['Status'] == 'Completed']))
-        # Searches for any status containing the word 'following'
+        c1.metric("Total Leads", len(df))
+        c2.metric("Completed", len(df[df['Status'] == 'Completed']))
         f_count = len(df[df['Status'].str.lower().str.contains('follow', na=False)])
-        c3.metric("Total Follow-ups", f_count)
-        
-        st.subheader("Performance Summary")
+        c3.metric("Follow-ups", f_count)
         st.bar_chart(df['Status'].value_counts())
-    else: st.info("Database is empty. Please upload leads.")
-
-elif nav == "📥 Sync Leads":
-    st.header("📥 Bulk Synchronization")
-    up = st.file_uploader("Upload Excel/CSV", type=['csv', 'xlsx'])
+elif nav == "📥 Import":
+    st.header("📥 Sync")
+    up = st.file_uploader("Upload", type=['csv', 'xlsx'])
     if up:
         new_df = pd.read_csv(up) if up.name.endswith('.csv') else pd.read_excel(up)
         new_df.columns = new_df.columns.str.strip().str.upper()
-        # SMART MAPPING: Handles 'MOBILE NUMBER' and 'CURRENT STATUS' headers
-        map_cols = {'CLIENT NAME':'Name','NAME':'Name','CLIENT CODE':'ID','MOBILE':'Number','NUMBER':'Number','MOBILE NUMBER':'Number','CURRENT STATUS':'Status','STATUS':'Status'}
-        new_df = new_df.rename(columns=map_cols)
-        
+        m = {'CLIENT NAME':'Name','NAME':'Name','CLIENT CODE':'ID','MOBILE':'Number','NUMBER':'Number','MOBILE NUMBER':'Number','CURRENT STATUS':'Status','STATUS':'Status'}
+        new_df = new_df.rename(columns=m)
         if 'Status' not in new_df.columns: new_df['Status'] = 'Pending'
         if 'Notes' not in new_df.columns: new_df['Notes'] = ''
-        
         st.dataframe(new_df.head(5))
-        if st.button("🔥 Finalize Synchronize"):
+        if st.button("🔥 Sync Leads"):
             save_db(pd.concat([load_db(), new_df], ignore_index=True))
-            st.success("Master Records Updated Successfully.")
-
-elif nav == "🎯 Call Station":
-    st.header("🎯 Active Dialer Terminal")
+            st.success("Database Updated")
+elif nav == "🎯 Dialer":
+    st.header("🎯 Terminal")
     df = load_db()
     if not df.empty:
-        # Improved Filter Bar
-        s_filter = st.radio("Select View", ["All", "Pending", "Completed", "Follow-ups"], horizontal=True)
-        
-        disp_df = df.copy()
-        if s_filter == "Pending": disp_df = disp_df[disp_df['Status'] == 'Pending']
-        elif s_filter == "Completed": disp_df = disp_df[disp_df['Status'] == 'Completed']
-        elif s_filter == "Follow-ups": disp_df = disp_df[disp_df['Status'].str.lower().str.contains('follow', na=False)]
-        
-        search = st.text_input("🔍 Search Database (Name or ID)")
-        if search: disp_df = disp_df[disp_df['Name'].astype(str).str.contains(search, case=False)]
-        
-        # EDITABLE TABLE WITH DROPDOWN
-        edited_df = st.data_editor(
-            disp_df, 
-            use_container_width=True, 
-            num_rows="dynamic",
-            column_config={
-                "Status": st.column_config.SelectboxColumn("Status", options=EMPIRE_STATUSES, required=True)
-            },
-            key="v10_editor"
-        )
-        
-        if st.button("💾 SAVE ALL PROGRESS & REFRESH"):
-            master_df = load_db()
-            master_df.update(edited_df)
-            save_db(master_df)
-            st.success("Progress Saved! Lead will move to the correct list instantly.")
-            st.rerun() # Refresh to update filters immediately
-    else: st.warning("No leads found.")
+        v = st.radio("View", ["All", "Pending", "Completed", "Follow-ups"], horizontal=True)
+        d = df.copy()
+        if v == "Pending": d = d[d['Status'] == 'Pending']
+        elif v == "Completed": d = d[d['Status'] == 'Completed']
+        elif v == "Follow-ups": d = d[d['Status'].str.lower().str.contains('follow', na=False)]
+        s = st.text_input("🔍 Search")
+        if s: d = d[d['Name'].astype(str).str.contains(s, case=False)]
+        ed = st.data_editor(d, use_container_width=True, num_rows="dynamic", column_config={"Status": st.column_config.SelectboxColumn("Status", options=STATUS_LIST, required=True)}, key="v11_ed")
+        if st.button("💾 SAVE & REFRESH"):
+            master = load_db()
+            master.update(ed)
+            save_db(master)
+            st.success("Saved")
+            st.rerun()
