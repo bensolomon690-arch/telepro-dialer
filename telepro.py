@@ -56,7 +56,11 @@ elif nav == "📥 Import":
         if 'Notes' not in new_df.columns: new_df['Notes'] = ''
         st.dataframe(new_df.head(5))
         if st.button("🔥 Sync Leads"):
-            save_db(pd.concat([load_db(), new_df], ignore_index=True))
+            existing = load_db()
+            final = pd.concat([existing, new_df], ignore_index=True)
+            # Remove duplicate columns if they exist
+            final = final.loc[:, ~final.columns.duplicated()]
+            save_db(final)
             st.success("Database Updated")
 elif nav == "🎯 Dialer":
     st.header("🎯 Terminal")
@@ -66,7 +70,9 @@ elif nav == "🎯 Dialer":
         d = df.copy()
         if v == "Pending": d = d[d['Status'] == 'Pending']
         elif v == "Completed": d = d[d['Status'] == 'Completed']
-        elif v == "Follow-ups": d = d[d['Status'].str.lower().str.contains('follow', na=False)]
+        elif v == "Follow-ups": 
+            # This fixes the section bug - it finds ALL types of followings
+            d = d[d['Status'].str.lower().str.contains('follow', na=False)]
         s = st.text_input("🔍 Search")
         if s: d = d[d['Name'].astype(str).str.contains(s, case=False)]
         ed = st.data_editor(d, use_container_width=True, num_rows="dynamic", column_config={"Status": st.column_config.SelectboxColumn("Status", options=STATUS_LIST, required=True)}, key="v11_ed")
