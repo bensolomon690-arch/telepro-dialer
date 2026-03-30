@@ -2,9 +2,11 @@ import streamlit as st
 import pandas as pd
 import os
 
-st.set_page_config(page_title="Solomon telecaller Pro", layout="wide")
+# --- 1. SYSTEM CONFIGURATION ---
+st.set_page_config(page_title="Solomon Empire Pro", layout="wide")
 DB_FILE = 'telecaller_master_db.csv'
 
+# Professional White & Navy Theme for maximum visibility
 st.markdown("""
     <style>
     .stApp { background-color: #FFFFFF; color: #1E1E1E; }
@@ -14,23 +16,24 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+# --- 2. MASTER STATUS LIST (All your custom options) ---
 EMPIRE_STATUSES = [
-    "Pending", "Completed", "Bending", "no incoming call", "out off service", 
-    "no idea", "FOLLOWINGS", "NOT ANSWERING", "CUT THE CALL", 
-    "STOCK INVESTMENT / SELLING", "insurance", "fno followings", 
-    "rnt followings", "re activation followings", "pre ipo followings", 
-    "visiting office", "switch off", "account opening followings", 
+    "Pending", "Completed", "Bending", "no incoming call", "out off service", "no idea", 
+    "FOLLOWINGS", "NOT ANSWERING", "CUT THE CALL", "STOCK INVESTMENT / SELLING",
+    "insurance", "fno followings", "rnt followings", "re activation followings",
+    "pre ipo followings", "visiting office", "switch off", "account opening followings",
     "no response", "mutual fund followings", "not interested", "payin followings"
 ]
 
+# --- 3. SECURITY GATEWAY ---
 if 'auth' not in st.session_state: st.session_state['auth'] = False
 
 def login():
     st.markdown("<h1 style='text-align: center;'>🏛️ Solomon Empire Access</h1>", unsafe_allow_html=True)
     _, col, _ = st.columns([1, 1.2, 1])
     with col:
-        u_id = st.text_input("👤 Identity (e.g., ben)")
-        u_pin = st.text_input("🔑 PIN", type="password")
+        u_id = st.text_input("👤 Management Identity (e.g., ben)")
+        u_pin = st.text_input("🔑 Security PIN", type="password")
         if st.button("Authorize Entry"):
             if u_pin == "123456" and u_id.lower() == "ben":
                 st.session_state['auth'] = True
@@ -45,62 +48,63 @@ def login():
 
 if not st.session_state['auth']: login()
 
+# --- 4. DATA ENGINE (FIXES ATTRIBUTEERROR) ---
 def load_db(): 
     if os.path.exists(DB_FILE):
         df = pd.read_csv(DB_FILE)
-        # CRITICAL: Fixes image_968da6.png AttributeError
+        # Force Status to string to prevent attribute errors in charts/filters
         df['Status'] = df['Status'].fillna('Pending').astype(str)
         return df
     return pd.DataFrame()
 
 def save_db(df): df.to_csv(DB_FILE, index=False)
 
+# --- 5. NAVIGATION ---
 st.sidebar.title("Telecall Pro v10.0")
 if st.sidebar.button("🔐 Logout System"):
     st.session_state.clear()
     st.rerun()
 
-nav = st.sidebar.radio("Command Center", ["📊 Dashboard", "📥 Import Leads", "🎯 Calling Station"])
+if st.session_state['role'] == "Managing Director":
+    nav = st.sidebar.radio("Command Center", ["📊 Stats", "📥 Sync Leads", "🎯 Call Station"])
+else:
+    nav = st.sidebar.radio("Staff Station", ["📥 Sync Leads", "🎯 Call Station"])
 
-if nav == "📊 Dashboard":
+# --- 6. PAGE LOGIC ---
+if nav == "📊 Stats":
     st.header("📊 Intelligence Dashboard")
     df = load_db()
     if not df.empty:
         c1, c2, c3 = st.columns(3)
-        # Version-Safe Metrics (Removed 'border' to prevent errors)
         c1.metric("Total Empire Leads", len(df))
         c2.metric("Completed Calls", len(df[df['Status'] == 'Completed']))
-        # Logic to find all types of followings
+        # Searches for any status containing the word 'following'
         f_count = len(df[df['Status'].str.lower().str.contains('follow', na=False)])
         c3.metric("Total Follow-ups", f_count)
         
-        st.subheader("Performance Breakdown")
+        st.subheader("Performance Summary")
         st.bar_chart(df['Status'].value_counts())
     else: st.info("Database is empty. Please upload leads.")
 
-elif nav == "📥 Import Leads":
+elif nav == "📥 Sync Leads":
     st.header("📥 Bulk Synchronization")
     up = st.file_uploader("Upload Excel/CSV", type=['csv', 'xlsx'])
     if up:
         new_df = pd.read_csv(up) if up.name.endswith('.csv') else pd.read_excel(up)
         new_df.columns = new_df.columns.str.strip().str.upper()
-        # FIXED MAPPING: Your data will no longer stay 'Pending' or 'None'
-        map_cols = {
-            'CLIENT NAME':'Name','NAME':'Name','CLIENT CODE':'ID',
-            'MOBILE':'Number','NUMBER':'Number','MOBILE NUMBER':'Number',
-            'STATUS':'Status','CURRENT STATUS':'Status' # Maps directly to Status
-        }
+        # SMART MAPPING: Handles 'MOBILE NUMBER' and 'CURRENT STATUS' headers
+        map_cols = {'CLIENT NAME':'Name','NAME':'Name','CLIENT CODE':'ID','MOBILE':'Number','NUMBER':'Number','MOBILE NUMBER':'Number','CURRENT STATUS':'Status','STATUS':'Status'}
         new_df = new_df.rename(columns=map_cols)
         
         if 'Status' not in new_df.columns: new_df['Status'] = 'Pending'
         if 'Notes' not in new_df.columns: new_df['Notes'] = ''
         
-        st.dataframe(new_df.head(10))
+        st.dataframe(new_df.head(5))
         if st.button("🔥 Finalize Synchronize"):
             save_db(pd.concat([load_db(), new_df], ignore_index=True))
-            st.success("Empire Records Updated Successfully.")
+            st.success("Master Records Updated Successfully.")
 
-elif nav == "🎯 Calling Station":
+elif nav == "🎯 Call Station":
     st.header("🎯 Active Dialer Terminal")
     df = load_db()
     if not df.empty:
@@ -115,6 +119,7 @@ elif nav == "🎯 Calling Station":
         search = st.text_input("🔍 Search Database (Name or ID)")
         if search: disp_df = disp_df[disp_df['Name'].astype(str).str.contains(search, case=False)]
         
+        # EDITABLE TABLE WITH DROPDOWN
         edited_df = st.data_editor(
             disp_df, 
             use_container_width=True, 
@@ -129,6 +134,6 @@ elif nav == "🎯 Calling Station":
             master_df = load_db()
             master_df.update(edited_df)
             save_db(master_df)
-            st.success("Saved! Moving leads to correct tabs...")
-            st.rerun() # Forces instant update
-    else: st.warning("No leads found. Head to 'Import Leads' to begin.")
+            st.success("Progress Saved! Lead will move to the correct list instantly.")
+            st.rerun() # Refresh to update filters immediately
+    else: st.warning("No leads found.")
